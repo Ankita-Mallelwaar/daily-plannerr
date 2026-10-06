@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#6d5dfc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Daily Planner</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-top">
+            <div>
+                <div class="logo">📅 Daily Planner</div>
+                <div class="subtitle">Plan your college life. One day at a time.</div>
+            </div>
+
+            <div class="header-actions">
+                <button class="icon-btn" id="settingsBtn">⚙</button>
+            </div>
+        </div>
+
+        <div class="date-display" id="currentDate"></div>
+    </header>
+
+    <main class="content">
+
+        <!-- TODAY PAGE -->
+        <section class="page active" id="todayPage">
+
+            <h2 class="section-title">Good morning 👋</h2>
+            <p class="section-subtitle">Here is your plan for today.</p>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="todayTaskCount">0</div>
+                    <div class="stat-label">Tasks</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-number" id="completedCount">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-number" id="todayProgress">0%</div>
+                    <div class="stat-label">Progress</div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <div style="display:flex;justify-content:space-between;">
+                    <strong>Today's Progress</strong>
+                    <span id="progressText">0 / 0</span>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:14px;">🔥 Streak</h3>
+
+                <div class="streak-card">
+                    <div class="fire">🔥</div>
+                    <div>
+                        <div style="font-size:27px;font-weight:700;" id="streakCount">0 days</div>
+                        <div style="color:var(--muted);font-size:13px;">
+                            Keep completing your daily tasks.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:10px;">Today's Schedule</h3>
+                <div id="todaySchedule"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:12px;">Today's Tasks</h3>
+                <div class="task-list" id="todayTasks"></div>
+            </div>
+
+        </section>
+
+        <!-- TASKS PAGE -->
+        <section class="page" id="tasksPage">
+
+            <h2 class="section-title">Tasks</h2>
+            <p class="section-subtitle">
+                Manage assignments, study work and tests.
+            </p>
+
+            <div class="card">
+                <div class="task-list" id="allTasks"></div>
+            </div>
+
+        </section>
+
+        <!-- TIMETABLE PAGE -->
+        <section class="page" id="timetablePage">
+
+            <h2 class="section-title">College Timetable</h2>
+            <p class="section-subtitle">
+                Add your lectures and college periods.
+            </p>
+
+            <div class="card">
+                <button class="primary-btn" id="addLectureBtn">
+                    + Add Lecture
+                </button>
+            </div>
+
+            <div class="card">
+                <div id="timetableList"></div>
+            </div>
+
+        </section>
+
+        <!-- EXAMS PAGE -->
+        <section class="page" id="examsPage">
+
+            <h2 class="section-title">Tests & Exams</h2>
+            <p class="section-subtitle">
+                Keep your academic deadlines in one place.
+            </p>
+
+            <div class="card">
+                <button class="primary-btn" id="addExamBtn">
+                    + Add Test / Exam
+                </button>
+            </div>
+
+            <div id="examList"></div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<!-- FLOATING ADD BUTTON -->
+<button class="add-btn" id="addTaskBtn">+</button>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+
+    <div class="nav-inner">
+
+        <button class="nav-btn active" data-page="todayPage">
+            <span class="nav-icon">🏠</span>
+            Today
+        </button>
+
+        <button class="nav-btn" data-page="tasksPage">
+            <span class="nav-icon">✅</span>
+            Tasks
+        </button>
+
+        <button class="nav-btn" data-page="timetablePage">
+            <span class="nav-icon">🏫</span>
+            Timetable
+        </button>
+
+        <button class="nav-btn" data-page="examsPage">
+            <span class="nav-icon">📝</span>
+            Exams
+        </button>
+
+    </div>
+
+</nav>
+
+<!-- TASK MODAL -->
+
+<div class="modal" id="taskModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Add Task</h2>
+            <button class="close-btn" data-close="taskModal">✕</button>
+        </div>
+
+        <form id="taskForm">
+
+            <div class="form-group">
+                <label>Task name</label>
+                <input type="text" id="taskName" placeholder="e.g. Complete Java assignment" required>
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" id="taskSubject" placeholder="Java">
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="taskCategory">
+                        <option>Assignment</option>
+                        <option>Study</option>
+                        <option>Test</option>
+                        <option>Project</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>Deadline</label>
+                    <input type="date" id="taskDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="taskPriority">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button class="primary-btn" type="submit">
+                Add Task
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- LECTURE MODAL -->
+
+<div class="modal" id="lectureModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Add Lecture</h2>
+            <button class="close-btn" data-close="lectureModal">✕</button>
+        </div>
+
+        <form id="lectureForm">
+
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="lectureSubject" placeholder="e.g. Java" required>
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>Day</label>
+                    <select id="lectureDay">
+                        <option>Monday</option>
+                        <option>Tuesday</option>
+                        <option>Wednesday</option>
+                        <option>Thursday</option>
+                        <option>Friday</option>
+                        <option>Saturday</option>
+                        <option>Sunday</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="lectureTime" required>
+                </div>
+
+            </div>
+
+            <button class="primary-btn" type="submit">
+                Add Lecture
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- EXAM MODAL -->
+
+<div class="modal" id="examModal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Add Test / Exam</h2>
+            <button class="close-btn" data-close="examModal">✕</button>
+        </div>
+
+        <form id="examForm">
+
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="examSubject" placeholder="e.g. Operating System" required>
+            </div>
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="examDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="examTime">
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <label>Type</label>
+
+                <select id="examType">
+                    <option>Test</option>
+                    <option>Internal Exam</option>
+                    <option>Semester Exam</option>
+                    <option>Practical</option>
+                </select>
+
+            </div>
+
+            <button class="primary-btn" type="submit">
+                Add Exam
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
