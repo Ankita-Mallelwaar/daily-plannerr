@@ -848,3 +848,297 @@ function renderAll() {
 ========================= */
 
 renderAll();
+
+
+/* =========================
+   TIMETABLE UPLOAD / OCR
+========================= */
+
+let uploadMode = "lecture";
+
+const uploadModal = document.getElementById("uploadModal");
+const uploadModeInput = document.getElementById("uploadMode");
+const uploadModalTitle = document.getElementById("uploadModalTitle");
+const timetableFile = document.getElementById("timetableFile");
+const extractBtn = document.getElementById("extractBtn");
+const extractStatus = document.getElementById("extractStatus");
+const extractedText = document.getElementById("extractedText");
+const uploadFormatHelp = document.getElementById("uploadFormatHelp");
+const importExtractedBtn = document.getElementById("importExtractedBtn");
+
+function openUploadModal(mode) {
+    uploadMode = mode;
+    uploadModeInput.value = mode;
+
+    uploadModalTitle.textContent =
+        mode === "lecture"
+            ? "Upload Lecture Timetable"
+            : "Upload Exam Timetable";
+
+    uploadFormatHelp.innerHTML =
+        mode === "lecture"
+            ? "<strong>Best import format:</strong><br>" +
+              "Monday | Java | 10:00<br>" +
+              "Tuesday | DBMS | 11:00<br>" +
+              "Wednesday | Python | 09:00<br><br>" +
+              "You can edit the extracted text into this format before importing."
+            : "<strong>Best import format:</strong><br>" +
+              "Java | 15/10/2026 | 10:00 | Test<br>" +
+              "DBMS | 18/10/2026 | 14:00 | Internal Exam<br><br>" +
+              "You can edit the extracted text into this format before importing.";
+
+    timetableFile.value = "";
+    extractedText.value = "";
+    extractStatus.textContent = "";
+    uploadModal.classList.add("active");
+}
+
+document.getElementById("uploadLectureBtn")?.addEventListener("click", () => {
+    openUploadModal("lecture");
+});
+
+document.getElementById("uploadExamBtn")?.addEventListener("click", () => {
+    openUploadModal("exam");
+});
+
+function cleanExtractedText(text) {
+    return text
+        .replace(/\r/g, "")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+async function extractPdfText(file) {
+    // pdf.js is loaded as an ES module from the CDN. Use the global if available,
+    // otherwise import it dynamically.
+    let pdfjsLib;
+    try {
+        pdfjsLib = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
+    } catch (error) {
+        throw new Error("Could not load the PDF reader. Please try an image instead.");
+    }
+
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let text = "";
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str || "").join(" ");
+        text += `\n--- Page ${pageNumber} ---\n${pageText}\n`;
+    }
+
+    return cleanExtractedText(text);
+}
+
+async function extractImageText(file) {
+    if (typeof Tesseract === "undefined") {
+        throw new Error("The OCR library could not be loaded. Check your internet connection and try again.");
+    }
+
+    const result = await Tesseract.recognize(file, "eng", {
+        logger: message => {
+            if (message.status === "recognizing text" && message.progress) {
+                extractStatus.textContent =
+                    `Reading image... ${Math.round(message.progress * 100)}%`;
+            } else if (message.status) {
+                extractStatus.textContent = `Reading image... ${message.status}`;
+            }
+        }
+    });
+
+    return cleanExtractedText(result.data.text || "");
+}
+
+extractBtn?.addEventListener("click", async () => {
+    const file = timetableFile.files[0];
+
+    if (!file) {
+        extractStatus.textContent = "Please choose an image or PDF first.";
+        return;
+    }
+
+    extractBtn.disabled = true;
+    extractStatus.textContent = "Starting extraction...";
+
+    try {
+        let text = "";
+
+        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+            text = await extractPdfText(file);
+        } else if (file.type.startsWith("image/")) {
+            text = await extractImageText(file);
+        } else {
+            throw new Error("Please upload an image or PDF.");
+        }
+
+        extractedText.value = text;
+
+        if (text) {
+            extractStatus.textContent =
+                "Extraction complete. Review the text, correct it if needed, then click Import to Planner.";
+        } else {
+            extractStatus.textContent =
+                "No text was detected. Please try a clearer image or enter the timetable text manually.";
+        }
+    } catch (error) {
+        extractStatus.textContent = error.message || "Could not extract the timetable.";
+    } finally {
+        extractBtn.disabled = false;
+    }
+});
+
+function parseTimeValue(value) {
+    if (!value) return "";
+
+    let match = value.match(/\b(\d{1,2})[:.](\d{2})\s*(AM|PM)?\b/i);
+    if (!match) return "";
+
+    let hour = Number(match[1]);
+    const minute = match[2];
+    const ampm = match[3] ? match[3].toUpperCase() : "";
+
+    if (ampm === "PM" && hour < 12) hour += 12;
+    if (ampm === "AM" && hour === 12) hour = 0;
+
+    if (hour > 23 || Number(minute) > 59) return "";
+
+    return `${String(hour).padStart(2, "0")}:${minute}`;
+}
+
+function parseDateValue(value) {
+    if (!value) return "";
+
+    let match = value.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/);
+    if (!match) {
+        match = value.match(/\b(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})\b/);
+        if (!match) return "";
+        return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+    }
+
+    let day = Number(match[1]);
+    let month = Number(match[2]);
+    let year = Number(match[3]);
+
+    if (year < 100) year += 2000;
+
+    if (month < 1 || month > 12 || day < 1 || day > 31) return "";
+
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function parseLectureLines(text) {
+    const result = [];
+    const dayRegex = /(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i;
+
+    text.split("\n").forEach(line => {
+        const raw = line.trim();
+        if (!raw) return;
+
+        const parts = raw.split("|").map(x => x.trim()).filter(Boolean);
+
+        if (parts.length >= 3) {
+            const dayMatch = parts[0].match(dayRegex);
+            const time = parseTimeValue(parts[2]) || parseTimeValue(parts[1]);
+
+            if (dayMatch && time) {
+                const subject = parts[1];
+                if (subject) {
+                    result.push({
+                        id: Date.now() + Math.random(),
+                        subject,
+                        day: dayMatch[1][0].toUpperCase() + dayMatch[1].slice(1).toLowerCase(),
+                        time
+                    });
+                }
+            }
+        }
+    });
+
+    return result;
+}
+
+function parseExamLines(text) {
+    const result = [];
+    const types = ["Semester Exam", "Internal Exam", "Practical", "Test"];
+
+    text.split("\n").forEach(line => {
+        const raw = line.trim();
+        if (!raw) return;
+
+        const parts = raw.split("|").map(x => x.trim()).filter(Boolean);
+
+        if (parts.length >= 3) {
+            const dateIndex = parts.findIndex(part => parseDateValue(part));
+            const timeIndex = parts.findIndex(part => parseTimeValue(part));
+
+            if (dateIndex !== -1) {
+                const date = parseDateValue(parts[dateIndex]);
+                const time = timeIndex !== -1 ? parseTimeValue(parts[timeIndex]) : "";
+                const subject = parts.find((part, i) =>
+                    i !== dateIndex && i !== timeIndex &&
+                    !types.some(type => part.toLowerCase() === type.toLowerCase())
+                );
+
+                let type = parts.find(part =>
+                    types.some(t => t.toLowerCase() === part.toLowerCase())
+                ) || "Test";
+
+                if (subject) {
+                    result.push({
+                        id: Date.now() + Math.random(),
+                        subject,
+                        date,
+                        time,
+                        type
+                    });
+                }
+            }
+        }
+    });
+
+    return result;
+}
+
+importExtractedBtn?.addEventListener("click", () => {
+    const text = extractedText.value.trim();
+
+    if (!text) {
+        extractStatus.textContent = "There is no extracted text to import.";
+        return;
+    }
+
+    if (uploadMode === "lecture") {
+        const imported = parseLectureLines(text);
+
+        if (!imported.length) {
+            extractStatus.innerHTML =
+                "No lecture rows were detected. Please edit the text into: " +
+                "<strong>Monday | Java | 10:00</strong>";
+            return;
+        }
+
+        lectures = lectures.concat(imported);
+        saveData();
+        renderAll();
+        uploadModal.classList.remove("active");
+        alert(`${imported.length} lecture(s) imported successfully.`);
+    } else {
+        const imported = parseExamLines(text);
+
+        if (!imported.length) {
+            extractStatus.innerHTML =
+                "No exam rows were detected. Please edit the text into: " +
+                "<strong>Java | 15/10/2026 | 10:00 | Test</strong>";
+            return;
+        }
+
+        exams = exams.concat(imported);
+        saveData();
+        renderAll();
+        uploadModal.classList.remove("active");
+        alert(`${imported.length} exam(s) imported successfully.`);
+    }
+});

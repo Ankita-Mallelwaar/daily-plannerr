@@ -516,3 +516,80 @@ button {
         grid-template-columns: 1fr;
     }
 }
+
+/* TIMETABLE UPLOAD */
+
+.upload-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.secondary-btn {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid #d9d2ff;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+}
+
+.secondary-btn:hover {
+    filter: brightness(0.98);
+}
+
+.upload-hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin: -8px 0 16px;
+    line-height: 1.5;
+}
+
+.upload-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.upload-status {
+    min-height: 22px;
+    margin: 12px 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#extractedText {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    background: #fafaff;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.upload-format-help {
+    background: var(--primary-light);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 12px 0 16px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.upload-format-help strong {
+    color: var(--primary);
+}
+
+@media (max-width: 600px) {
+    .upload-actions {
+        flex-direction: column;
+    }
+
+    .upload-actions button {
+        width: 100%;
+    }
+}

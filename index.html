@@ -113,10 +113,16 @@
                 Add your lectures and college periods.
             </p>
 
-            <div class="card">
+            <div class="upload-actions">
                 <button class="primary-btn" id="addLectureBtn">
                     + Add Lecture
                 </button>
+                <button class="secondary-btn" id="uploadLectureBtn">
+                    📤 Upload Lecture Timetable
+                </button>
+            </div>
+            <div class="upload-hint">
+                Upload an image or PDF. The app will extract the text, then you can review and import it.
             </div>
 
             <div class="card">
@@ -133,10 +139,16 @@
                 Keep your academic deadlines in one place.
             </p>
 
-            <div class="card">
+            <div class="upload-actions">
                 <button class="primary-btn" id="addExamBtn">
                     + Add Test / Exam
                 </button>
+                <button class="secondary-btn" id="uploadExamBtn">
+                    📤 Upload Exam Timetable
+                </button>
+            </div>
+            <div class="upload-hint">
+                Upload an image or PDF. The app will extract the text, then you can review and import it.
             </div>
 
             <div id="examList"></div>
@@ -178,6 +190,42 @@
     </div>
 
 </nav>
+
+
+<!-- TIMETABLE UPLOAD MODAL -->
+<div class="modal" id="uploadModal">
+    <div class="modal-content upload-modal-content">
+        <div class="modal-header">
+            <h2 id="uploadModalTitle">Upload Timetable</h2>
+            <button class="close-btn" data-close="uploadModal">✕</button>
+        </div>
+
+        <input type="hidden" id="uploadMode" value="lecture">
+
+        <div class="form-group">
+            <label>Select image or PDF</label>
+            <input type="file" id="timetableFile" accept="image/*,.pdf">
+        </div>
+
+        <button class="primary-btn" type="button" id="extractBtn">
+            🔎 Extract Timetable
+        </button>
+
+        <div id="extractStatus" class="upload-status"></div>
+
+        <div class="form-group">
+            <label>Review / edit extracted text</label>
+            <textarea id="extractedText" rows="10"
+                placeholder="Extracted text will appear here. You can edit it before importing."></textarea>
+        </div>
+
+        <div class="upload-format-help" id="uploadFormatHelp"></div>
+
+        <button class="primary-btn" type="button" id="importExtractedBtn">
+            Import to Planner
+        </button>
+    </div>
+</div>
 
 <!-- TASK MODAL -->
 
@@ -349,6 +397,8 @@
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
